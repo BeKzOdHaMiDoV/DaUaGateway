@@ -1,0 +1,274 @@
+<local:XpWindow x:Class="DaUaGateway.Configurator.MainWindow"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:local="clr-namespace:DaUaGateway.Configurator"
+                Title="DaUaGateway Конфигуратор — конвертер OPC DA → OPC UA"
+                Width="1440" Height="860" MinWidth="1000" MinHeight="600"
+                WindowStartupLocation="CenterScreen" WindowState="Maximized">
+    <Window.Resources>
+        <Style x:Key="PanelHeader" TargetType="{x:Type Border}">
+            <Setter Property="Background" Value="#DCD8C8"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SeparatorBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Padding" Value="8,4"/>
+        </Style>
+        <Style x:Key="PanelTitle" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#3A3829"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="Panel" TargetType="{x:Type Border}">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InsetBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- меню -->
+        <Menu DockPanel.Dock="Top" Background="Transparent" Padding="6,3">
+            <MenuItem Header="_Файл">
+                <MenuItem Header="Применить выбор" Click="OnApplyClick"/>
+                <Separator/>
+                <MenuItem Header="Импорт выбора из CSV…" Click="OnImportClick"/>
+                <MenuItem Header="Экспорт выбора в CSV…" Click="OnExportClick"/>
+                <MenuItem Header="Экспорт таблицы значений в CSV…" Click="OnExportValuesClick"/>
+                <Separator/>
+                <MenuItem Header="Выход" Click="OnExitClick"/>
+            </MenuItem>
+            <MenuItem Header="_Вид">
+                <MenuItem Header="Обновить список DA-серверов" Click="OnRefreshServersClick"/>
+                <MenuItem Header="Обновить таблицу" Click="OnRefreshTableClick"/>
+                <MenuItem Header="Очистить журнал" Click="OnClearLogClick"/>
+            </MenuItem>
+            <MenuItem Header="_Справка">
+                <MenuItem Header="О программе" Click="OnAboutClick"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- панель инструментов -->
+        <Border DockPanel.Dock="Top" BorderBrush="{StaticResource SeparatorBrush}" BorderThickness="0,1,0,1" Padding="6,4">
+            <DockPanel>
+                <Border DockPanel.Dock="Right" Background="White" BorderBrush="{StaticResource InsetBorderBrush}" BorderThickness="1"
+                        Padding="10,4" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="GatewayLamp" Width="12" Height="12" Fill="#9C9A8F" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="GatewayStateText" Text="Конвертер: проверка…" VerticalAlignment="Center" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource ToolButton}" Click="OnApplyClick" ToolTip="Сохранить выбор — конвертер подхватит его за пару секунд">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Width="16" Height="16" Stretch="Uniform" Stroke="#1F6B2C" StrokeThickness="2.4" Data="M2,9 L6,13 L14,3" Margin="0,0,6,0"/>
+                            <TextBlock Text="Применить" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ToolButton}" Click="OnRefreshServersClick">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Width="16" Height="16" Stretch="Uniform" Stroke="#1D4FA8" StrokeThickness="2" Data="M14,7 A6,6 0 1 0 12,12 M14,2 L14,7 L9,7" Margin="0,0,6,0"/>
+                            <TextBlock Text="Обновить"/>
+                        </StackPanel>
+                    </Button>
+                    <Rectangle Width="1" Height="22" Fill="#B9B5A2" Margin="6,0"/>
+                    <Button Style="{StaticResource ToolButton}" Click="OnImportClick">
+                        <TextBlock Text="Импорт CSV"/>
+                    </Button>
+                    <Button Style="{StaticResource ToolButton}" Click="OnExportClick">
+                        <TextBlock Text="Экспорт CSV"/>
+                    </Button>
+                    <Button Style="{StaticResource ToolButton}" Click="OnClearClick">
+                        <TextBlock Text="Снять выбор"/>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- строка состояния -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource SeparatorBrush}" BorderThickness="0,1,0,0">
+            <DockPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource StatusCell}" BorderThickness="0">
+                    <TextBlock x:Name="FolderText" TextTrimming="CharacterEllipsis" MaxWidth="600"/>
+                </Border>
+                <Border DockPanel.Dock="Right" Style="{StaticResource StatusCell}">
+                    <TextBlock x:Name="SelectedText" FontWeight="Bold"/>
+                </Border>
+                <Border Style="{StaticResource StatusCell}">
+                    <TextBlock x:Name="StatusText" TextTrimming="CharacterEllipsis"/>
+                </Border>
+            </DockPanel>
+        </Border>
+
+        <!-- основная область + журнал -->
+        <Grid Margin="6">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="6"/>
+                <RowDefinition x:Name="LogRowDef" Height="130" MinHeight="70"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="LeftColDef" Width="340" MinWidth="220"/>
+                    <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="6"/>
+                    <ColumnDefinition x:Name="RightColDef" Width="330" MinWidth="220"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- слева: DA-серверы + дерево -->
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition x:Name="ServersRowDef" Height="110" MinHeight="70"/>
+                        <RowDefinition Height="6"/>
+                        <RowDefinition Height="*" MinHeight="200"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource Panel}">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Top" Style="{StaticResource PanelHeader}">
+                                <TextBlock Text="DA-СЕРВЕРЫ" Style="{StaticResource PanelTitle}"/>
+                            </Border>
+                            <ListBox x:Name="ServerList" BorderThickness="0" SelectionChanged="OnServerSelected"
+                                     AutomationProperties.Name="DA-серверы"/>
+                        </DockPanel>
+                    </Border>
+
+                    <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch" Background="Transparent"/>
+
+                    <Border Grid.Row="2" Style="{StaticResource Panel}">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Top" Style="{StaticResource PanelHeader}">
+                                <TextBlock Text="ДЕРЕВО ТЕГОВ DA — ВЫБОР ДЛЯ КОНВЕРТАЦИИ" Style="{StaticResource PanelTitle}"/>
+                            </Border>
+                            <Border DockPanel.Dock="Top" Padding="8,6" BorderBrush="{StaticResource SeparatorBrush}" BorderThickness="0,0,0,1">
+                                <CheckBox x:Name="AutoAllBox" IsEnabled="False" Checked="OnAutoAllChanged" Unchecked="OnAutoAllChanged">
+                                    <TextBlock Text="Переводить ВСЕ теги сервера автоматически" FontWeight="Bold" TextWrapping="Wrap"/>
+                                </CheckBox>
+                            </Border>
+                            <TreeView x:Name="Tree" BorderThickness="0" SelectedItemChanged="OnTreeSelected"
+                                      AutomationProperties.Name="Дерево тегов DA-сервера"/>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Stretch" Background="Transparent"/>
+
+                <!-- центр: переведённые теги (как Data Access View) -->
+                <Border Grid.Column="2" Style="{StaticResource Panel}">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Style="{StaticResource PanelHeader}">
+                            <DockPanel>
+                                <TextBlock x:Name="TableCountText" DockPanel.Dock="Right" Foreground="#3A3829" VerticalAlignment="Center"/>
+                                <TextBlock Text="ПЕРЕВЕДЁННЫЕ ТЕГИ — ЖИВЫЕ ЗНАЧЕНИЯ ИЗ OPC UA" Style="{StaticResource PanelTitle}"/>
+                            </DockPanel>
+                        </Border>
+                        <Grid>
+                            <DataGrid x:Name="ValuesGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                                      HeadersVisibility="Column" GridLinesVisibility="All"
+                                      HorizontalGridLinesBrush="#EEEAE0" VerticalGridLinesBrush="#EEEAE0"
+                                      SelectionMode="Single" CanUserAddRows="False" AlternatingRowBackground="#F8F7F1"
+                                      SelectionChanged="OnRowSelected" EnableRowVirtualization="True"
+                                      AutomationProperties.Name="Переведённые теги">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="#" Binding="{Binding Index}" Width="44"/>
+                                    <DataGridTextColumn Header="NodeId" Binding="{Binding NodeIdText}" Width="2.6*">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="{x:Type TextBlock}">
+                                                <Setter Property="ToolTip" Value="{Binding NodeIdText}"/>
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Путь" Binding="{Binding Path}" Width="1.3*">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="{x:Type TextBlock}">
+                                                <Setter Property="ToolTip" Value="{Binding Path}"/>
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="1.3*" FontWeight="Bold"/>
+                                    <DataGridTextColumn Header="Значение" Binding="{Binding ValueText}" Width="1.6*">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="{x:Type TextBlock}">
+                                                <Setter Property="ToolTip" Value="{Binding ValueText}"/>
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Тип" Binding="{Binding TypeText}" Width="80"/>
+                                    <DataGridTextColumn Header="Время источника" Binding="{Binding SourceTime}" Width="118"/>
+                                    <DataGridTextColumn Header="Время сервера" Binding="{Binding ServerTime}" Width="118"/>
+                                    <DataGridTemplateColumn Header="Статус" Width="120">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusBrush}" FontWeight="Bold"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock x:Name="TableEmptyText" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       TextAlignment="Center" TextWrapping="Wrap" MaxWidth="460" Foreground="{StaticResource MutedTextBrush}"
+                                       Text="Выберите DA-сервер слева"/>
+                        </Grid>
+                    </DockPanel>
+                </Border>
+
+                <GridSplitter Grid.Column="3" Width="6" HorizontalAlignment="Stretch" Background="Transparent"/>
+
+                <!-- справа: атрибуты -->
+                <Border Grid.Column="4" Style="{StaticResource Panel}">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Style="{StaticResource PanelHeader}">
+                            <TextBlock Text="АТРИБУТЫ" Style="{StaticResource PanelTitle}"/>
+                        </Border>
+                        <DataGrid x:Name="AttrGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EEEAE0"
+                                  CanUserAddRows="False" AutomationProperties.Name="Атрибуты выбранного тега">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Атрибут" Binding="{Binding Name}" Width="120" Foreground="#4D4A3F"/>
+                                <DataGridTemplateColumn Header="Значение" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Value}" TextWrapping="Wrap"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch" Background="Transparent"/>
+
+            <!-- внизу: журнал -->
+            <Border Grid.Row="2" Style="{StaticResource Panel}">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Style="{StaticResource PanelHeader}">
+                        <TextBlock Text="ЖУРНАЛ" Style="{StaticResource PanelTitle}"/>
+                    </Border>
+                    <DataGrid x:Name="LogGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                              HeadersVisibility="Column" GridLinesVisibility="None" CanUserAddRows="False"
+                              AutomationProperties.Name="Журнал">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Время" Binding="{Binding Time}" Width="90"/>
+                            <DataGridTextColumn Header="Источник" Binding="{Binding Source}" Width="120"/>
+                            <DataGridTemplateColumn Header="Сообщение" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Message}" Foreground="{Binding Brush}" TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding Message}" ToolTipService.ShowDuration="60000"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</local:XpWindow>

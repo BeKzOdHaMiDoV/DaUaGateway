@@ -1,0 +1,8 @@
+# Пример файла для папки inbox (сохраняйте из Excel как "CSV (разделители - точки с запятой)")
+# ProgId;ItemId            - добавить тег
+# Host;ProgId;ItemId       - тег удалённого DA-сервера
+# ProgId;!ItemId           - исключить тег (можно маску)
+ProgId;ItemId
+Matrikon.OPC.Simulation.1;Random.UInt4
+Matrikon.OPC.Simulation.1;Random.Boolean
+Matrikon.OPC.Simulation.1;!Bucket Brigade.*

@@ -1,0 +1,46 @@
+{
+  "discovery": {
+    "enabled": true,
+    "hosts": [ "localhost" ],
+    "scanIntervalSec": 30,
+    "rebrowseIntervalSec": 300,
+    "excludeProgIds": []
+  },
+
+  "defaults": {
+    "mode": "manual",
+    "updateRateMs": 500,
+    "include": [ "*" ],
+    "exclude": [],
+    "allowWrite": false,
+    "maxTags": 20000,
+    "reconnectDelayMs": 5000,
+    "healthCheckMs": 2000,
+    "timestampSource": "auto"
+  },
+
+  "servers": [
+    {
+      "progId": "Matrikon.OPC.Simulation.1",
+      "host": "localhost",
+      "mode": "auto",
+      "include": [ "Random.*", "Saw-toothed Waves.*", "Triangle Waves.*", "Square Waves.*", "Bucket Brigade.*" ]
+    }
+  ],
+
+  "inboxDir": "inbox",
+  "dataDir": "data",
+
+  "ua": {
+    "endpoint": "opc.tcp://localhost:4840/DaUaGateway",
+    "applicationUri": "urn:DaUaGateway",
+    "namespaceUri": "urn:DaUaGateway:tags",
+    "allowUnsecured": true,
+    "autoAcceptUntrustedCertificates": true
+  },
+
+  "logging": {
+    "dir": "logs",
+    "keepDays": 14
+  }
+}

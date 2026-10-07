@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>DaUaGateway</RootNamespace>
+    <AssemblyName>DaUaGateway</AssemblyName>
+    <!-- OPC DA (COM) — 32-битный мир -->
+    <PlatformTarget>x86</PlatformTarget>
+    <!-- окно-пульт (WPF) и значок в трее (WinForms NotifyIcon) -->
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Version>2.6.0</Version>
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Версия зафиксирована: код проверен против API 1.5.378 -->
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Server" Version="1.5.378.*" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Configuration" Version="1.5.378.*" />
+    <PackageReference Include="TitaniumAS.Opc.Client" Version="1.0.*" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.*" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.ServiceProcess" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="gateway.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="scripts\*.ps1" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- как и шлюз: .NET Framework 4.8, 32 бита — для работы с OPC DA (COM) -->
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <PlatformTarget>x86</PlatformTarget>
+    <RootNamespace>DaUaGateway.Configurator</RootNamespace>
+    <AssemblyName>DaUaGateway.Configurator</AssemblyName>
+    <Version>2.4.2</Version>
+    <!-- своя точка входа (Program.Main): OPC DA инициализируется в MTA, окна WPF — в отдельном STA-потоке -->
+    <StartupObject>DaUaGateway.Configurator.Program</StartupObject>
+    <Product>DaUaGateway Конфигуратор</Product>
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- те же библиотеки и версии, что у шлюза: exe кладётся в его папку и использует его dll -->
+    <PackageReference Include="TitaniumAS.Opc.Client" Version="1.0.*" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.*" />
+    <!-- OPC UA клиент: живая таблица переведённых тегов (та же версия стека, что у конвертера) -->
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Client" Version="1.5.378.*" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Configuration" Version="1.5.378.*" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>
